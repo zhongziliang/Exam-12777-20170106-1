@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>主页</title>
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/css/bootstrap-theme.css"/>
+    <link rel="stylesheet" href="/css/my.css"/>
+    <script src="/js/jquery-3.1.1.js"></script>
+    <script src="/js/jquery.validate.js"></script>
+    <script src="/js/messages_zh.js"></script>
+    <script src="/js/bootstrap.js"></script>
+    <script>
+        function delete1(msg) {
+                    $.ajax({
+                        url:"/deleteById.do?id="+msg,
+                        success: function(date){
+                            alert("SUCCESS");
+                        },
+                        error:function(date){
+                            alert("ERROR");
+                        }
+                    });
+
+        };
+    </script>
+</head>
+<body style="background-color: #5bc0de">
+<div class="col-md-10 col-md-offset-1" style="margin-top: 60px">
+    <div class="panel panel-info">
+        <a href="gotoInsert.do"><button type="button" class="btn btn-info col-md-1">增加</button></a>
+        <br>
+        <hr style="color: #28a4c9;">
+        <table id="userTable" class="table table-striped">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>标题</th>
+                <th>描述</th>
+                <th>语言</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <ul id="pagination" class="pagination col-sm-5" style="margin:0">
+            <li class="previous"><a href="#">&lt;&lt;</a></li>
+            <li class="next"><a href="#">&gt;&gt;</a></li>
+        </ul>
+
+        <div class="col-sm-1">
+            <select id="pageSize"  class="form-control">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+    </div>
+
+    <script id="rowTemplate" type="application/html">
+        <tr>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        </tr>
+
+    </script>
+
+    <script>
+        $('document').ready(function () {
+            window.page = {
+                page: 1,
+                pageSize: Number($('#pageSize').val()),
+                total: 0,
+                totalPage: 0
+            };
+            query(page);
+            $('#pagination').children('li:first').click(function() {
+                window.page.page = 1;
+                query(window.page);
+            });
+
+            $('#pagination').children('li:last').click(function() {
+                window.page.page = window.page.totalPage;
+                query(window.page);
+            });
+
+            $('#pageSize').change(function() {
+                window.page.page = 1;
+                window.page.pageSize = Number($('#pageSize').val());
+                query(window.page);
+            });
+
+            $('#go').click(function() {
+                window.page.page = Number($('#page').val());
+                query(window.page);
+            });
+        });
+
+
+
+        function resetPage(page) {
+            window.page.total = page.total;
+            window.page.page = page.page;
+            window.page.pageSize = page.pageSize;
+            window.page.totalPage  = Math.ceil(page.total/window.page.pageSize);
+        }
+
+
+        function query(queryInfo) {
+            var defaultArg = {
+                page: 1,
+                pageSize: 10
+            };
+            queryInfo = $.extend({}, defaultArg, queryInfo);
+            $.ajax({
+                url: "/show.do",
+                type: "GET",
+                dataType: "json",
+                data: queryInfo,
+                success: function (data) {
+                    // total rows
+                    queryInfo.total = data.total;
+                    resetPage(queryInfo);
+                    $('#userTable tbody').empty();
+                    console.log(data.rows)
+                    for (var item of data.rows) {
+                        var $template = $($('#rowTemplate').html()).clone();
+                        var id=item.id;
+                        $template.children('td').eq(0).text(item.id);
+                        $template.children('td').eq(1).text(item.title);
+                        $template.children('td').eq(2).text(item.description);
+                        $template.children('td').eq(3).text(item.language.name);
+                        $template.children('td').eq(4).append("<a href='/html/update.html?id="+id+"'>修改</a>");
+                        $template.children('td').eq(5).append("<a onclick='delete1("+id+")'>刪除</a>");
+                        $('#userTable').append($template);
+                    }
+                    $('#page').attr('max',window.page.totalPage);
+                    $('#page').val(queryInfo.page);
+                }
+            })
+        }
+    </script>
